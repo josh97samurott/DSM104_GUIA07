@@ -1,6 +1,7 @@
 package com.example.dsm104_guia07;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -10,15 +11,24 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.GoogleAuthProvider;
 
 public class LoginActivity extends AppCompatActivity {
 
     private EditText emailTV, passwordTV;
-    private Button loginBtn;
+    private Button loginBtn, loginGoogle;
+    private static final int Google_sign_in =200;
     private ProgressBar progressBar;
 
     private FirebaseAuth mAuth;
@@ -39,6 +49,14 @@ public class LoginActivity extends AppCompatActivity {
                 loginUserAccount();
             }
         });
+
+        loginGoogle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                loginGoogle();
+            }
+        });
+
     }
 
     private void loginUserAccount() {
@@ -76,11 +94,63 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    private void loginGoogle() {
+
+        // Configure Google Sign In
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getString(R.string.default_web_client_id))
+                .requestEmail()
+                .build();
+
+        //creando cliente de autentificacion de google
+
+        GoogleSignInClient mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+        startActivityForResult(signInIntent, Google_sign_in);
+        mGoogleSignInClient.signOut();
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == Google_sign_in){
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            try {
+                GoogleSignInAccount account = task.getResult(ApiException.class);
+                if(account != null){
+                    AuthCredential credential = GoogleAuthProvider.getCredential(account.getIdToken(), null);
+                    FirebaseAuth.getInstance().signInWithCredential(credential)
+                            .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                                @Override
+                                public void onComplete(@NonNull Task<AuthResult> task) {
+                                    if(task.isSuccessful()){
+                                        Toast.makeText(getApplicationContext(), "Registro exitoso en Firebase", Toast.LENGTH_LONG).show();
+                                        progressBar.setVisibility(View.GONE);
+                                        Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
+                                        startActivity(intent);
+                                    }
+                                    else{
+                                        Toast.makeText(getApplicationContext(), "Registro fallido, intentelo más tarde", Toast.LENGTH_LONG).show();
+                                        progressBar.setVisibility(View.GONE);
+                                    }
+
+                                }
+                            });
+                }
+
+            } catch (ApiException e){
+
+            }
+        }
+    }
+
     private void initializeUI() {
         emailTV = findViewById(R.id.email);
         passwordTV = findViewById(R.id.password);
 
         loginBtn = findViewById(R.id.login);
         progressBar = findViewById(R.id.progressBar);
+        loginGoogle = findViewById(R.id.sign_in_button);
     }
 }
