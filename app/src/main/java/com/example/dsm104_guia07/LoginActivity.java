@@ -3,9 +3,11 @@ package com.example.dsm104_guia07;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -27,7 +29,7 @@ import com.google.firebase.auth.GoogleAuthProvider;
 public class LoginActivity extends AppCompatActivity {
 
     private EditText emailTV, passwordTV;
-    private Button loginBtn, loginGoogle;
+    private Button loginBtn, loginGoogle, registerBtn;
     private static final int Google_sign_in =200;
     private ProgressBar progressBar;
 
@@ -54,6 +56,14 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 loginGoogle();
+            }
+        });
+
+        registerBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(LoginActivity.this, RegistrationActivity.class);
+                startActivity(intent);
             }
         });
 
@@ -97,10 +107,7 @@ public class LoginActivity extends AppCompatActivity {
     private void loginGoogle() {
 
         // Configure Google Sign In
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id))
-                .requestEmail()
-                .build();
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestIdToken(getString(R.string.default_web_client_id)).requestEmail().build();
 
         //creando cliente de autentificacion de google
 
@@ -108,15 +115,17 @@ public class LoginActivity extends AppCompatActivity {
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, Google_sign_in);
         mGoogleSignInClient.signOut();
-
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        Log.i(String.valueOf(LoginActivity.this), "Entre aquí");
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode == Google_sign_in){
+            Log.i(String.valueOf(LoginActivity.this), "Entre aquí 5");
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
+                Log.i(String.valueOf(LoginActivity.this), "Entre aquí 6");
                 GoogleSignInAccount account = task.getResult(ApiException.class);
                 if(account != null){
                     AuthCredential credential = GoogleAuthProvider.getCredential(account.getIdToken(), null);
@@ -124,13 +133,16 @@ public class LoginActivity extends AppCompatActivity {
                             .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                                 @Override
                                 public void onComplete(@NonNull Task<AuthResult> task) {
+                                    Log.i(String.valueOf(LoginActivity.this), "Entre aquí 3");
                                     if(task.isSuccessful()){
+                                        Log.i(String.valueOf(LoginActivity.this), "Entre aquí 2");
                                         Toast.makeText(getApplicationContext(), "Registro exitoso en Firebase", Toast.LENGTH_LONG).show();
                                         progressBar.setVisibility(View.GONE);
                                         Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
                                         startActivity(intent);
                                     }
                                     else{
+                                        Log.i(String.valueOf(LoginActivity.this), "Entre aquí 4");
                                         Toast.makeText(getApplicationContext(), "Registro fallido, intentelo más tarde", Toast.LENGTH_LONG).show();
                                         progressBar.setVisibility(View.GONE);
                                     }
@@ -140,7 +152,7 @@ public class LoginActivity extends AppCompatActivity {
                 }
 
             } catch (ApiException e){
-
+                Log.i(String.valueOf(LoginActivity.this), e.getMessage());
             }
         }
     }
@@ -152,5 +164,6 @@ public class LoginActivity extends AppCompatActivity {
         loginBtn = findViewById(R.id.login);
         progressBar = findViewById(R.id.progressBar);
         loginGoogle = findViewById(R.id.sign_in_button);
+        registerBtn = findViewById(R.id.register);
     }
 }
